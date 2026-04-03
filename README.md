@@ -222,9 +222,9 @@ NEO4J_USER=neo4j
 NEO4J_PASSWORD=minimem123
 
 # LLM 配置（可选，用于实体提取）
-LLM_API_BASE=https://llm-api.talkweb.com.cn/v1
+LLM_API_BASE=https://your-llm-api.com/v1
 LLM_API_KEY=your-api-key
-LLM_MODEL=tw/gpu/qwen3.5-397b-a17b
+LLM_MODEL=your-model-name
 ENTITY_EXTRACTOR=llm  # simple | llm | hybrid
 
 # 记忆批量写入
