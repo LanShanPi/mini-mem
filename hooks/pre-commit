@@ -1,0 +1,62 @@
+#!/bin/bash
+# Git 预提交钩子：检查是否有意提交敏感信息
+# 安装：cp .git/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo "🔒 运行安全预提交检查..."
+
+# 检查 1: .env 文件中是否有 API 密钥
+if [ -f ".env" ]; then
+    if grep -qE "^LLM_API_KEY=sk-[a-zA-Z0-9]+" .env || \
+       grep -qE "^OPENAI_API_KEY=sk-[a-zA-Z0-9]+" .env || \
+       grep -qE "^NEO4J_PASSWORD=.+" .env; then
+        echo -e "${RED}❌ 安全检查失败！${NC}"
+        echo ""
+        echo ".env 文件中检测到 API 密钥或敏感密码："
+        grep -nE "^(LLM_API_KEY|OPENAI_API_KEY|NEO4J_PASSWORD)=" .env | head -5
+        echo ""
+        echo -e "${YELLOW}建议：${NC}"
+        echo "  1. 将密钥移到 api_key.local 文件（只写一行密钥）"
+        echo "  2. 或设置环境变量 MINIMEM_API_KEY_FILE 指向密钥文件"
+        echo "  3. .env 应该只包含配置，不包含真实密钥"
+        echo ""
+        echo "跳过检查（不推荐）：git commit --no-verify"
+        exit 1
+    fi
+fi
+
+# 检查 2: 是否有意提交 .env 到 git
+if git ls-files --error-unmatch .env > /dev/null 2>&1; then
+    echo -e "${YELLOW}⚠️  警告：.env 文件已被 git 追踪${NC}"
+    echo "  建议运行：git rm --cached .env"
+    echo "  然后确保 .env 在 .gitignore 中"
+fi
+
+# 检查 3: api_key.local 是否被错误追踪
+if git ls-files --error-unmatch api_key.local > /dev/null 2>&1; then
+    echo -e "${RED}❌ 安全检查失败！${NC}"
+    echo ""
+    echo "api_key.local 文件不应被 git 追踪！"
+    echo "  运行：git rm --cached api_key.local"
+    exit 1
+fi
+
+# 检查 4: 是否有硬编码的密钥模式在代码文件中
+echo "  扫描代码中的硬编码密钥模式..."
+KEYWORDS="sk-[a-zA-Z0-9]{20,}|AKIA[0-9A-Z]{16}|ghp_[a-zA-Z0-9]{36}"
+if git diff --cached --name-only | xargs grep -lE "$KEYWORDS" 2>/dev/null; then
+    echo -e "${RED}❌ 安全检查失败！${NC}"
+    echo ""
+    echo "暂存的文件中检测到可能的 API 密钥模式"
+    echo "请确认没有硬编码密钥在代码中"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ 安全检查通过！${NC}"
+exit 0

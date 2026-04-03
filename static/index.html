@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MiniMem</title>
+  <style>
+    :root {
+      --bg: #0e1218;
+      --card: #161c26;
+      --border: #2a3344;
+      --text: #e8edf4;
+      --muted: #7a8aa0;
+      --user: #2d4a66;
+      --bot: #222a38;
+      --accent: #5b9fd4;
+      --font: system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 15px;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 12px;
+    }
+    .dialog {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      min-height: 0;
+      flex: 1;
+      max-height: calc(100vh - 24px);
+    }
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .bubble {
+      max-width: 92%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .bubble.user {
+      align-self: flex-end;
+      background: var(--user);
+      border: 1px solid rgba(91, 159, 212, 0.25);
+    }
+    .bubble.assistant {
+      align-self: flex-start;
+      background: var(--bot);
+      border: 1px solid var(--border);
+    }
+    .bubble.system {
+      align-self: center;
+      max-width: 100%;
+      font-size: 13px;
+      color: var(--muted);
+      background: transparent;
+      border: none;
+      text-align: center;
+    }
+    .bubble.err {
+      align-self: flex-start;
+      max-width: 100%;
+      font-size: 14px;
+      color: #f0b4b8;
+      background: rgba(180, 60, 70, 0.25);
+      border: 1px solid rgba(224, 108, 117, 0.5);
+    }
+    .bubble.loading {
+      align-self: flex-start;
+      color: var(--muted);
+      font-style: italic;
+      background: var(--bot);
+      border: 1px dashed var(--border);
+    }
+    .composer button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .composer {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .composer textarea {
+      flex: 1;
+      resize: none;
+      min-height: 44px;
+      max-height: 120px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0d1118;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 15px;
+    }
+    .composer textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .composer button {
+      flex-shrink: 0;
+      padding: 0 18px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #0a0e14;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .composer button:hover { filter: brightness(1.05); }
+    .composer button:active { transform: scale(0.98); }
+    .settings-link {
+      text-align: right;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .settings-link a {
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .settings-link a:hover { text-decoration: underline; }
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      width: 90%;
+      max-width: 400px;
+    }
+    .modal h3 { margin: 0 0 16px 0; color: var(--text); }
+    .modal input[type="password"], .modal input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #0d1118;
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .modal-buttons button {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .modal-buttons button.cancel {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .modal-buttons button.save {
+      background: var(--accent);
+      color: #0a0e14;
+    }
+  </style>
+</head>
+<body>
+  <div class="dialog">
+    <div class="settings-link">
+      <a onclick="showSettings()">⚙️ API Key 设置</a>
+    </div>
+    <div id="chatLog" class="messages" aria-live="polite"></div>
+    <div class="composer">
+      <textarea id="input" rows="1" placeholder="输入消息…" autocomplete="off"></textarea>
+      <button type="button" id="send">发送</button>
+    </div>
+  </div>
+
+  <!-- API Key 设置弹窗 -->
+  <div id="settingsModal" class="modal-overlay">
+    <div class="modal">
+      <h3>API Key 设置</h3>
+      <input type="password" id="apiKeyInput" placeholder="输入 API Key（可选）" />
+      <div class="modal-buttons">
+        <button class="cancel" onclick="hideSettings()">取消</button>
+        <button class="save" onclick="saveApiKey()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var chatHistory = [];
+    var sending = false;
+    var SESSION_KEY = "minimem_session_id";
+    var API_KEY = "";  // 用于存储 API Key
+
+    // 页面加载时检查是否有 API Key
+    window.addEventListener("DOMContentLoaded", function() {
+      var savedKey = localStorage.getItem("minimem_api_key");
+      if (savedKey) {
+        API_KEY = savedKey;
+      }
+    });
+
+    function getSessionId() {
+      try {
+        return sessionStorage.getItem(SESSION_KEY) || "";
+      } catch (e) {
+        return "";
+      }
+    }
+    function setSessionId(id) {
+      if (!id) return;
+      try {
+        sessionStorage.setItem(SESSION_KEY, id);
+      } catch (e) {}
+    }
+
+    window.addEventListener("beforeunload", function () {
+      var sid = getSessionId();
+      if (!sid) return;
+      try {
+        // 先同步 flush 缓冲
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/chat/flush", false);  // 同步请求
+        xhr.setRequestHeader("Content-Type", "application/json");
+        if (API_KEY) {
+          xhr.setRequestHeader("X-API-Key", API_KEY);
+        }
+        xhr.send(JSON.stringify({ session_id: sid }));
+      } catch (e) {
+        console.error("flush 失败:", e);
+      }
+    });
+
+    async function api(path, opts) {
+      var ctrl = new AbortController();
+      var t = setTimeout(function () { ctrl.abort(); }, 240000);
+      var o = opts || {};
+      // 添加 API Key 头
+      if (API_KEY) {
+        o.headers = o.headers || {};
+        o.headers["X-API-Key"] = API_KEY;
+      }
+      o.signal = ctrl.signal;
+      var r;
+      try {
+        r = await fetch(path, o);
+      } finally {
+        clearTimeout(t);
+      }
+      var data = await r.json().catch(function () { return {}; });
+      if (!r.ok) {
+        var d = data.detail;
+        if (d && typeof d === "object" && !Array.isArray(d) && d.hint) {
+          throw new Error(d.hint + (d.technical ? "\n" + d.technical : ""));
+        }
+        if (Array.isArray(d)) {
+          d = d.map(function (x) { return x.msg || JSON.stringify(x); }).join("; ");
+        }
+        throw new Error((typeof d === "string" ? d : JSON.stringify(d)) || r.statusText || "错误");
+      }
+      return data;
+    }
+
+    function bubble(role, text) {
+      var log = document.getElementById("chatLog");
+      var div = document.createElement("div");
+      div.className = "bubble " + role;
+      div.textContent = text;
+      log.appendChild(div);
+      log.scrollTop = log.scrollHeight;
+      return div;
+    }
+
+    function removeNode(el) {
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    }
+
+    async function send() {
+      if (sending) return;
+      if (location.protocol === "file:") {
+        bubble(
+          "err",
+          "不能这样用：你是直接打开的 HTML 文件。请先运行：python3 -m uvicorn web_server:app --host 127.0.0.1 --port 8765，再在浏览器地址栏输入 http://127.0.0.1:8765"
+        );
+        return;
+      }
+      var ta = document.getElementById("input");
+      var btn = document.getElementById("send");
+      var text = ta.value.trim();
+      if (!text) return;
+      ta.value = "";
+      bubble("user", text);
+      var loading = bubble("loading", "正在等模型回复…");
+      sending = true;
+      btn.disabled = true;
+      try {
+        var data = await api("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: text,
+            history: chatHistory,
+            remember: true,
+            session_id: getSessionId() || undefined,
+          }),
+        });
+        removeNode(loading);
+        if (data.session_id) setSessionId(data.session_id);
+        chatHistory.push({ role: "user", content: text });
+        chatHistory.push({ role: "assistant", content: data.reply });
+        bubble("assistant", data.reply);
+      } catch (e) {
+        removeNode(loading);
+        var msg = String(e.message || e);
+        if (msg.indexOf("aborted") !== -1) {
+          msg = "请求超时（超过 4 分钟）。请检查网络或模型服务。";
+        }
+        if (msg.indexOf("Failed to fetch") !== -1) {
+          msg =
+            "连不上后端。请确认已在本机启动：python3 -m uvicorn web_server:app --host 127.0.0.1 --port 8765，并用 http://127.0.0.1:8765 打开本页。";
+        }
+        bubble("err", msg);
+      } finally {
+        sending = false;
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById("send").onclick = send;
+    document.getElementById("input").addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter" && !ev.shiftKey) {
+        ev.preventDefault();
+        send();
+      }
+    });
+
+    // API Key 设置弹窗控制
+    function showSettings() {
+      document.getElementById("settingsModal").classList.add("show");
+      document.getElementById("apiKeyInput").value = API_KEY;
+    }
+
+    function hideSettings() {
+      document.getElementById("settingsModal").classList.remove("show");
+    }
+
+    function saveApiKey() {
+      var input = document.getElementById("apiKeyInput");
+      API_KEY = input.value.trim();
+      if (API_KEY) {
+        localStorage.setItem("minimem_api_key", API_KEY);
+      } else {
+        localStorage.removeItem("minimem_api_key");
+      }
+      hideSettings();
+      bubble("system", "API Key 已保存");
+    }
+
+    // 页面加载时检查配置状态
+    if (location.protocol === "file:") {
+      bubble(
+        "err",
+        "请通过 http://127.0.0.1:8765 访问（先启动 uvicorn），不要双击打开本 HTML。"
+      );
+    } else {
+      api("/api/config-status")
+        .then(function (s) {
+          if (!s.llm_api_key_configured) {
+            bubble(
+              "err",
+              "还没有 API 密钥，模型无法说话。请在项目根目录新建 api_key.local，里面只写一行 sk-… 密钥，保存后刷新本页。"
+            );
+          }
+          // 如果服务端启用了认证但前端没有保存密钥，提示用户设置
+          if (s.auth_enabled && !API_KEY) {
+            bubble(
+              "system",
+              "提示：服务端已启用 API Key 认证，请点击右上角「⚙️ API Key 设置」输入密钥。"
+            );
+          }
+        })
+        .catch(function () {});
+    }
+  </script>
+</body>
+</html>

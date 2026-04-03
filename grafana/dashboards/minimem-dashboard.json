@@ -1,0 +1,117 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "minimem-main",
+    "title": "MiniMem 生产监控",
+    "tags": ["minimem"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 0,
+    "refresh": "10s",
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "type": "graph",
+        "title": "API 请求量",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[1m])",
+            "legendFormat": "{{method}} {{path}}"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "type": "graph",
+        "title": "API 响应时间",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[1m]))",
+            "legendFormat": "P95"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[1m]))",
+            "legendFormat": "P50"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8},
+        "type": "stat",
+        "title": "Neo4j 节点数",
+        "targets": [
+          {
+            "expr": "neo4j_nodes_total",
+            "legendFormat": "节点总数"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8},
+        "type": "stat",
+        "title": "Neo4j 边数",
+        "targets": [
+          {
+            "expr": "neo4j_edges_total",
+            "legendFormat": "边总数"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8},
+        "type": "stat",
+        "title": "服务状态",
+        "targets": [
+          {
+            "expr": "up{job=\"minimem\"}",
+            "legendFormat": "MiniMem"
+          }
+        ],
+        "sparkline": {"show": true},
+        "colorMode": "background"
+      },
+      {
+        "id": 6,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "type": "graph",
+        "title": "记忆存储速率",
+        "targets": [
+          {
+            "expr": "rate(memories_stored_total[1m])",
+            "legendFormat": "记忆/分钟"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+        "type": "graph",
+        "title": "记忆检索延迟",
+        "targets": [
+          {
+            "expr": "rate(recall_duration_seconds_sum[1m]) / rate(recall_duration_seconds_count[1m])",
+            "legendFormat": "平均延迟"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 24},
+        "type": "table",
+        "title": "错误统计",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) by (path)",
+            "legendFormat": "{{path}}"
+          }
+        ]
+      }
+    ]
+  },
+  "overwrite": true
+}

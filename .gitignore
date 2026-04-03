@@ -1,0 +1,44 @@
+# 生产环境文件
+
+# 日志
+logs/
+*.log
+
+# SSL 证书
+ssl/*.pem
+ssl/*.key
+ssl/*.csr
+
+# 备份文件
+backups/
+
+# 监控数据
+prometheus_data/
+grafana_data/
+loki_data/
+
+# 本地配置（含敏感信息）
+.env
+api_key.local
+
+# Docker 数据卷
+neo4j_data/
+neo4j_logs/
+
+# 临时文件
+tmp/
+*.tmp
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+venv/
+.env.local

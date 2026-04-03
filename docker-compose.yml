@@ -1,0 +1,60 @@
+services:
+  # Neo4j 图数据库
+  neo4j:
+    image: neo4j:5
+    container_name: minimem_neo4j
+    ports:
+      - "7474:7474"  # Neo4j Browser
+      - "7687:7687"  # Bolt 协议
+    environment:
+      - NEO4J_AUTH=neo4j/minimem123
+      - NEO4J_PLUGINS=["apoc"]
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7474"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - minimem_network
+
+  # MiniMem Web 服务
+  minimem:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: minimem_web
+    ports:
+      - "8765:8765"
+    environment:
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=minimem123
+      - LLM_API_BASE=${LLM_API_BASE:-https://llm-api.talkweb.com.cn/v1}
+      - LLM_MODEL=${LLM_MODEL:-tw/gpu/qwen3.5-397b-a17b}
+      - LLM_EMBEDDING_MODEL=${LLM_EMBEDDING_MODEL:-tw/gpu/bge-m3}
+      - MEMORY_BATCH_ENABLED=true
+      - MEMORY_AUTO_BACKUP_ENABLED=true
+      - MEMORY_AUTO_BACKUP_INTERVAL_HOURS=6
+      - MEMORY_AUTO_BACKUP_KEEP_DAYS=7
+      - MEMORY_IDLE_FLUSH_SECONDS=180
+    volumes:
+      - ./backups:/app/backups
+      - ./api_key.local:/app/api_key.local:ro
+      - ./.env:/app/.env:ro
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    networks:
+      - minimem_network
+    restart: unless-stopped
+
+volumes:
+  neo4j_data:
+    driver: local
+
+networks:
+  minimem_network:
+    driver: bridge

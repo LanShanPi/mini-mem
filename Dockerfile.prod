@@ -1,0 +1,41 @@
+FROM dockerproxy.net/library/python:3.10-slim
+
+# 创建非 root 用户
+RUN useradd -m -u 1000 -r minimem
+
+WORKDIR /app
+
+# 安装依赖
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install gunicorn && \
+    pip install sentry-sdk[fastapi]
+
+# 复制项目文件
+COPY . .
+
+# 创建必要目录
+RUN mkdir -p backups logs && \
+    chown -R minimem:minimem /app
+
+# 切换到非 root 用户
+USER minimem
+
+# 暴露端口
+EXPOSE 8765
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8765/health || exit 1
+
+# 使用 gunicorn 生产级 WSGI 服务器
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", \
+     "-b", "0.0.0.0:8765", \
+     "-w", "2", \
+     "--threads", "4", \
+     "--worker-connections", "1000", \
+     "--max-requests", "1000", \
+     "--max-requests-jitter", "100", \
+     "--access-logfile", "logs/access.log", \
+     "--error-logfile", "logs/error.log", \
+     "web_server:app"]
