@@ -54,9 +54,9 @@ ENTITY_EXTRACTOR=llm  # simple | llm | hybrid
 
 **配置：**
 ```bash
-LLM_API_BASE=http://192.168.143.117:3900/v1
+LLM_API_BASE=https://api.openai.com/v1
 LLM_API_KEY=sk-xxx
-LLM_MODEL=tw/gpu/qwen3.5-397b-a17b
+LLM_MODEL=gpt-4o-mini
 ```
 
 ---

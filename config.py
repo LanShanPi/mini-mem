@@ -176,11 +176,11 @@ NEO4J_USER = _str_env("NEO4J_USER", "neo4j")
 NEO4J_PASSWORD = _str_env("NEO4J_PASSWORD", "minimem123")
 
 # LLM 配置（OpenAI 兼容 API）
-LLM_API_BASE = _str_env("LLM_API_BASE", "https://llm-api.talkweb.com.cn/v1").rstrip("/")
+LLM_API_BASE = _str_env("LLM_API_BASE", "https://api.openai.com/v1").rstrip("/")
 # 模块导入时快照；发起 LLM 请求请用 get_llm_api_key() 以读到最新 .env / 密钥文件
 LLM_API_KEY = get_llm_api_key()
-LLM_MODEL = _str_env("LLM_MODEL", "tw/gpu/qwen3.5-397b-a17b")
-LLM_EMBEDDING_MODEL = _str_env("LLM_EMBEDDING_MODEL", "tw/gpu/bge-m3")
+LLM_MODEL = _str_env("LLM_MODEL", "gpt-4")
+LLM_EMBEDDING_MODEL = _str_env("LLM_EMBEDDING_MODEL", "text-embedding-3-small")
 
 # 实体与记忆分析
 ENTITY_EXTRACTOR = _str_env("ENTITY_EXTRACTOR", "llm")
