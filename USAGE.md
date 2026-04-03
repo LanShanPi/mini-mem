@@ -21,8 +21,8 @@ mini_mem/
 from store import store_memory
 
 # 存储一段记忆
-store_memory("志理今天喝了咖啡")
-store_memory("蓝山在办公室写代码")
+store_memory("张三今天喝了咖啡")
+store_memory("李四在办公室写代码")
 ```
 
 ### 方式 B: 结构化事件
@@ -32,7 +32,7 @@ from store import store_event
 
 # 存储事件（参与者 + 概念）
 store_event(
-    participants=["志理", "蓝山"],
+    participants=["张三", "李四"],
     concepts=["咖啡", "聊天"],
     timestamp="2026-03-13",
     emotion=0.8
@@ -46,7 +46,7 @@ from store import store_memory
 from memory_graph import get_graph
 
 graph = get_graph()
-store_memory("志理喝咖啡", graph=graph)
+store_memory("张三喝咖啡", graph=graph)
 ```
 
 ---
@@ -71,7 +71,7 @@ for name, score in results:
 ```python
 from recall import recall_detailed
 
-results = recall_detailed("志理", top_k=5)
+results = recall_detailed("张三", top_k=5)
 
 for node, score, path in results:
     print(f"节点：{node['name']}")
@@ -84,8 +84,8 @@ for node, score, path in results:
 ```python
 from recall import related_to
 
-# 查找与"志理"直接相连的节点
-neighbors = related_to("志理")
+# 查找与"张三"直接相连的节点
+neighbors = related_to("张三")
 
 for name, weight in neighbors:
     print(f"{name} (权重：{weight:.2f})")
@@ -118,9 +118,9 @@ from memory_graph import get_graph
 graph = get_graph()
 
 # 存储记忆
-store_memory("志理在星巴克喝了美式")
-store_memory("蓝山喜欢喝拿铁")
-store_memory("志理和蓝山聊咖啡")
+store_memory("张三在星巴克喝了美式")
+store_memory("李四喜欢喝拿铁")
+store_memory("张三和李四聊咖啡")
 
 # 回想"咖啡"相关的内容
 results = recall("咖啡", top_k=5)
@@ -131,9 +131,9 @@ for name, score in results:
 # 输出:
 # 找到 5 条相关记忆:
 #   - 咖啡 (相关度：1.00)
-#   - 志理和蓝山聊咖啡 (相关度：0.90)
-#   - 蓝山喜欢喝拿铁 (相关度：0.75)
-#   - 志理在星巴克喝了美式 (相关度：0.70)
+#   - 张三和李四聊咖啡 (相关度：0.90)
+#   - 李四喜欢喝拿铁 (相关度：0.75)
+#   - 张三在星巴克喝了美式 (相关度：0.70)
 #   - 星巴克 (相关度：0.60)
 ```
 
