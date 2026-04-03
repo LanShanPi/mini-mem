@@ -98,9 +98,9 @@ python cli.py
 
 | 命令 | 功能 | 示例 |
 |------|------|------|
-| `存储 <内容>` | 存储记忆 | `存储 志理今天喝了咖啡` |
+| `存储 <内容>` | 存储记忆 | `存储 张三今天喝了咖啡` |
 | `回想 <关键词>` | 回想相关记忆 | `回想 咖啡` |
-| `相关 <节点名>` | 查找相关节点 | `相关 志理` |
+| `相关 <节点名>` | 查找相关节点 | `相关 张三` |
 | `统计` | 查看网络统计 | `统计` |
 | `帮助` | 显示帮助 | `帮助` |
 | `退出` | 退出程序 | `退出` |
@@ -110,12 +110,12 @@ python cli.py
 ```
 🧠 MiniMem 交互式命令行
 
-> 存储 志理在办公室写代码
+> 存储 张三在办公室写代码
 ✅ 已存储
 
 > 回想 咖啡
   1. 咖啡                                                 ████████████████████ 1.00
-  2. 志理                                                 ███████████░░░░░░░░░ 0.57
+  2. 张三                                                 ███████████░░░░░░░░░ 0.57
   3. 星巴克                                               ██████████░░░░░░░░░░ 0.47
 
 > 统计
@@ -134,7 +134,7 @@ python cli.py
 from store import store_memory
 
 # 存储一段记忆
-store_memory("志理在星巴克喝了美式，说今天好累")
+store_memory("张三在星巴克喝了美式，说今天好累")
 ```
 
 ### 回想记忆
@@ -143,7 +143,7 @@ store_memory("志理在星巴克喝了美式，说今天好累")
 from recall import recall
 
 # 根据关键词回想
-results = recall("志理 咖啡", top_k=10)
+results = recall("张三 咖啡", top_k=10)
 for node_name, activation in results:
     print(f"{node_name}: {activation:.2f}")
 ```
@@ -153,8 +153,8 @@ for node_name, activation in results:
 ```python
 from recall import related_to
 
-# 查找与"志理"相关的节点
-neighbors = related_to("志理", depth=2)
+# 查找与"张三"相关的节点
+neighbors = related_to("张三", depth=2)
 for name, weight in neighbors:
     print(f"{name}: {weight:.2f}")
 ```
